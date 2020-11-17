@@ -27,6 +27,8 @@ def prepend_file(
         start = source.find('\n', 1) + 1
         if start == 0:
             start = len(source)
+        # add a line break just in case for not to break thea heading
+        content = '\n' + content
 
     processed_content = source[:start] + content + source[start:]
 
