@@ -134,7 +134,7 @@ To add validator to your options object, supply it in the constructor:
 >>> options = Options (config_options, validators={'check': validate_is_str})
 Traceback (most recent call last):
   ...
-foliant.preprocessors.utils.combined_options.ValidationError: Error in option "check": Value should be string!
+foliant.contrib.combined_options.ValidationError: Error in option "check": Value should be string!
 
 ```
 
@@ -174,7 +174,7 @@ Options class may check if all of the required options are defined. To use this 
 >>> options = Options(config_options, required=['title', 'space'])
 Traceback (most recent call last):
   ...
-foliant.preprocessors.utils.combined_options.RequiredParamsMissingError: Not all required params are supplied: ['title', 'space']
+foliant.contrib.combined_options.RequiredParamsMissingError: Not all required params are supplied: ['title', 'space']
 
 ```
 
@@ -275,7 +275,7 @@ To use this validator, first get one from the factory, supplying the list of cor
 >>> options = Options({'dish': 'chicken'}, validators={'dish': validator})
 Traceback (most recent call last):
   ...
-foliant.preprocessors.utils.combined_options.ValidationError: Error in option "dish": Unsupported option value chicken. Should be one of: spam, eggs, bacon
+foliant.contrib.combined_options.ValidationError: Error in option "dish": Unsupported option value chicken. Should be one of: spam, eggs, bacon
 
 ```
 
@@ -289,7 +289,7 @@ foliant.preprocessors.utils.combined_options.ValidationError: Error in option "d
 >>> options = Options({'name': 998}, validators={'name': validator})
 Traceback (most recent call last):
   ...
-foliant.preprocessors.utils.combined_options.ValidationError: Error in option "name": Unsupported option value 998. Must be of type <class 'str'>
+foliant.contrib.combined_options.ValidationError: Error in option "name": Unsupported option value 998. Must be of type <class 'str'>
 
 ```
 
@@ -302,7 +302,7 @@ You can also specify a list of supported types:
 >>> options = Options({'name': ['Bob', 'Alice']}, validators={'name': validator})
 Traceback (most recent call last):
   ...
-foliant.preprocessors.utils.combined_options.ValidationError: Error in option "name": Unsupported option value ['Bob', 'Alice']. Must be of type <class 'str'>, <class 'int'>, None
+foliant.contrib.combined_options.ValidationError: Error in option "name": Unsupported option value ['Bob', 'Alice']. Must be of type <class 'str'>, <class 'int'>, None
 
 ```
 
@@ -316,7 +316,7 @@ foliant.preprocessors.utils.combined_options.ValidationError: Error in option "n
 >>> options = Options({'fp': '/wrong'}, validators={'fp': validate_exists})
 Traceback (most recent call last):
   ...
-foliant.preprocessors.utils.combined_options.ValidationError: Error in option "fp": Path /wrong does not exist.
+foliant.contrib.combined_options.ValidationError: Error in option "fp": Path /wrong does not exist.
 
 ```
 

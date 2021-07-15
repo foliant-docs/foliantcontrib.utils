@@ -15,8 +15,7 @@ pip3 install foliantcontrib.utils
 Right now this module offers only one useful function, called `prepend_file`. This function properly prepends the markdown file with text string. If file starts with a YAML Front Matter or a heading, there are options to insert the content after them.
 
 ```python
->>> from foliant.contrib.utils import prepend_file
-
+from foliant.contrib.utils import prepend_file
 ```
 
 Let's assume we have a file which begins with YAML Front Matter:
@@ -34,8 +33,7 @@ If we want to add some content to the beginning of this file for some reason, we
 We can use the `prepend_file` function which will manage this case for us:
 
 ```python
->>> prepend_file('myfile.md', '\nInserted content\n', before_yfm=False)
-
+prepend_file('myfile.md', '\nInserted content\n', before_yfm=False)
 ```
 
 Notice the `before_yfm` paramter. If it is `False` (which it is by default), the content will be added *after* YAML Front Matter. The result would be:
@@ -64,7 +62,7 @@ Contents.
 let's add some text:
 
 ```python
->>> prepend_file('myfile.md', '\nInserted content\n', before_heading=False)
+prepend_file('myfile.md', '\nInserted content\n', before_heading=False)
 ```
 
 Result:
