@@ -1,10 +1,16 @@
-from pathlib import PosixPath, Path
+from pathlib import Path
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Iterator
+from typing import Union
 
 
-def flatten_seq(seq):
+def flatten_seq(seq: Union[list, dict]) -> list:
     """convert a sequence of embedded sequences into a plain list"""
+
     result = []
-    vals = seq.values() if type(seq) == dict else seq
+    vals = seq.values() if isinstance(seq, dict) else seq
     for i in vals:
         if isinstance(i, (dict, list)):
             result.extend(flatten_seq(i))
@@ -26,56 +32,54 @@ class Chapters:
 
     def __init__(self,
                  chapters: list,
-                 working_dir: str or PosixPath or None = None,
-                 src_dir: str or PosixPath or None = None,
+                 working_dir: Optional[Union[str, Path]] = None,
+                 src_dir: Optional[Union[str, Path]] = None,
                  ):
         self.working_dir = Path(working_dir).resolve() if working_dir else None
         self.src_dir = Path(src_dir).resolve() if src_dir else None
         self._chapters = chapters
         self._flat = flatten_seq(chapters)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._flat)
 
-    def __getitem__(self, ind: int):
+    def __getitem__(self, ind: int) -> str:
         return self._flat[ind]
 
-    def __contains__(self, item: str):
+    def __contains__(self, item: str) -> bool:
         return item in self._flat
 
     def __iter__(self):
         return iter(self._flat)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'Chapters({self._chapters})'
 
-    @staticmethod
-    def from_config(config: dict):
-        '''
-        Returns a Chapters instance, initiated with properties from config.
-        '''
-        return Chapters(
+    @classmethod
+    def from_config(cls, config: dict) -> 'Chapters':
+        '''Returns a Chapters instance, initiated with properties from config.'''
+        return cls(
             config['chapters'],
             working_dir=config['tmp_dir'],
             src_dir=config['src_dir']
         )
 
     @property
-    def chapters(self):
+    def chapters(self) -> list:
         """Original chapters list"""
         return self._chapters
 
     @chapters.setter
-    def chapters(self, chapters):
+    def chapters(self, chapters) -> None:
         self._chapters = chapters
         self._flat = flatten_seq(chapters)
 
     @property
-    def flat(self):
+    def flat(self) -> list:
         """Flat list of chapter file names"""
         return self._flat
 
-    def get_chapter_by_path(self, filepath: str or PosixPath):
+    def get_chapter_by_path(self, filepath: Union[str, Path]) -> str:
         """
         Try and find filepath in working dir or src dir. If it is present in
         one of those — return relative path to file (as it is stated in chapters)
@@ -90,7 +94,7 @@ class Chapters:
         else:
             raise ChapterNotFoundError(f'{filepath} is not in the chapter list')
 
-    def paths(self, parent_dir: str or PosixPath):
+    def paths(self, parent_dir: Union[str, Path]) -> Iterator:
         """
         Returns generator yielding PosixPath object with chapter path, relative
         to parent_dir.
@@ -98,9 +102,9 @@ class Chapters:
 
         return (Path(parent_dir) / chap for chap in self.flat)
 
-    def get_chapter_title(self, chapter_path: str):
+    def get_chapter_title(self, chapter_path: str) -> str:
         """
-        Returns the title for the chapter, defind in the chapters list.
+        Returns the title for the chapter, defined in the chapters list.
         Returns empty string if chapter defined without title.
         Raises ChapterNotFoundError if chapter is not present in the list.
 
@@ -129,7 +133,7 @@ class Chapters:
 
         :returns: chapter title or empty string.
         """
-        def find_chapter(chapters: list or dict, to_find: str) -> str or dict or None:
+        def find_chapter(chapters: Union[list, dict], to_find: str) -> Union[str, dict, None]:
             if isinstance(chapters, list):
                 for i in chapters:
                     if isinstance(i, (list, dict)):
