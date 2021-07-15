@@ -9,8 +9,6 @@ from foliant.contrib.chapters import flatten_seq
 from .utils import chcwd
 
 class TestFlattenSeq(TestCase):
-    test_data_path = 'test/test_data/chapters'
-
     def test_plain_list(self):
         seq = ['ch1.md', 'ch2.md', 'ch3.md', 'ch4.md']
         self.assertEqual(flatten_seq(seq), seq)
@@ -70,6 +68,10 @@ class TestFlattenSeq(TestCase):
         expected = ['ch1.md', 'ch2.md', 'ch3.md', 'ch4.md', 'ch5.md', 'ch6.md', 'ch7.md', 'ch8.md']
 
         self.assertEqual(flatten_seq(seq), expected)
+
+
+class TestChapters(TestCase):
+    test_data_path = 'test/test_data/chapters'
 
     def test_from_config(self):
         chapters = ['ch1.md', 'ch2.md', {'Title3': 'ch3.md'}, {'Title4': ['ch4.md', 'ch5.md']}]
