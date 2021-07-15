@@ -1,17 +1,17 @@
+from pathlib import Path
 from unittest import TestCase
 from unittest.mock import Mock
-from pathlib import Path
 
 from foliant.contrib.combined_options import CombinedOptions
 from foliant.contrib.combined_options import Options
-from foliant.contrib.combined_options import path_convertor
-from foliant.contrib.combined_options import rel_path_convertor
-from foliant.contrib.combined_options import boolean_convertor
-from foliant.contrib.combined_options import validate_in
-from foliant.contrib.combined_options import validate_exists
-from foliant.contrib.combined_options import val_type
 from foliant.contrib.combined_options import RequiredParamsMissingError
 from foliant.contrib.combined_options import ValidationError
+from foliant.contrib.combined_options import boolean_convertor
+from foliant.contrib.combined_options import path_convertor
+from foliant.contrib.combined_options import rel_path_convertor
+from foliant.contrib.combined_options import val_type
+from foliant.contrib.combined_options import validate_exists
+from foliant.contrib.combined_options import validate_in
 
 
 class TestOptions(TestCase):

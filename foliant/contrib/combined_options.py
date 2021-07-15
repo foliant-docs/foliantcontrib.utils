@@ -1,8 +1,16 @@
 import yaml
-from pathlib import Path, PosixPath
-from copy import deepcopy
-from collections import OrderedDict
 
+from collections import OrderedDict
+from copy import deepcopy
+from pathlib import Path
+from typing import Any
+from typing import Callable
+from typing import Collection
+from typing import Sequence
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
 
 class ValidationError(Exception):
     '''Error for validations when validation is failed'''
@@ -22,10 +30,10 @@ class Options:
 
     def __init__(self,
                  options: dict,
-                 defaults: dict = None,
-                 convertors: dict = None,
-                 validators: dict = None,
-                 required: list = None):
+                 defaults: Optional[Dict[str, Any]] = None,
+                 convertors: Optional[Dict[str, Callable]] = None,
+                 validators: Optional[Dict[str, Callable]] = None,
+                 required: Optional[Union[List[str], List[List[str]]]] = None):
         '''
         options (dict)    — options dictionary,
         defaults (dict)   — dictionary with default values,
@@ -48,18 +56,18 @@ class Options:
         self._convert()
 
     @property
-    def options(self):
+    def options(self) -> dict:
         '''Actual options dictionary'''
         return self._options
 
-    def validate(self):
+    def validate(self) -> None:
         '''
         Validate all options with supplied validators and check for required
         params.
         Raises ValidationError if any of validation checks fails.
         Raises RequiredParamsMissingError if required params are not supplied.
         '''
-        def _check_required(combination) -> bool:
+        def _check_required(combination: Collection) -> bool:
             for param in combination:
                 if param not in self.options:
                     return False
@@ -85,7 +93,7 @@ class Options:
                         f'Not all required params are supplied. '
                         f'Required parameter combinations are:\n{required_combs}')
 
-    def _convert(self):
+    def _convert(self) -> None:
         '''
         Convert all options with supplied convertors and replace values in
         options dictionary in place.
@@ -98,7 +106,7 @@ class Options:
                 convertor = self._convertors[key]
                 self.options[key] = convertor(self.options[key])
 
-    def is_default(self, option):
+    def is_default(self, option: str) -> bool:
         '''return True if option value is same as default'''
         if option in self.defaults:
             return self.options[option] == self.defaults[option]
@@ -107,23 +115,23 @@ class Options:
     def __str__(self):
         return f'<{self.__class__.__name__}{self.options}>'
 
-    def __getitem__(self, ind: str):
+    def __getitem__(self, ind: str) -> Any:
         return self.options[ind]
 
-    def __setitem__(self, ind: str, val):
+    def __setitem__(self, ind: str, val: Any):
         self.options[ind] = val
         self.validate()
 
-    def __contains__(self, ind: str):
+    def __contains__(self, ind: str) -> bool:
         return ind in self.options
 
     def __iter__(self):
         return iter(self.options.keys())
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return bool(self.options)
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Optional[Any] = None) -> Any:
         return self.options.get(key, default)
 
     def keys(self):
@@ -146,12 +154,12 @@ class CombinedOptions(Options):
     '''
 
     def __init__(self,
-                 options: dict or OrderedDict,
-                 priority: str or list = None,
-                 defaults: dict = None,
-                 convertors: dict = None,
-                 validators: dict = None,
-                 required: list = None):
+                 options: dict,
+                 priority: Optional[Union[str, Sequence[str]]] = None,
+                 defaults: Optional[Dict[str, Any]] = None,
+                 convertors: Optional[Dict[str, Callable]] = None,
+                 validators: Optional[Dict[str, Callable]] = None,
+                 required: Optional[Union[List[str], List[List[str]]]] = None):
         '''
         :param options:  dictionary where key = priority,
                          value = option dictionary.
@@ -168,15 +176,15 @@ class CombinedOptions(Options):
         if isinstance(priority, (list, tuple)):
             self.priority = list(priority)
         else:
-            self.priority = priority
+            self.priority = priority  # type: ignore
 
     @property
-    def priority(self):
+    def priority(self) -> Union[str, Sequence[str]]:
         '''returns current priority'''
         return self._priority
 
     @priority.setter
-    def priority(self, val: str):
+    def priority(self, val: Union[str, Sequence[str], None]) -> None:
         '''sets new priority and updates active options dictionary'''
         if isinstance(val, (list, tuple)):
             priority_list = val
@@ -193,7 +201,7 @@ class CombinedOptions(Options):
         self._priority = priority_list
         self.set_options()
 
-    def set_options(self):
+    def set_options(self) -> None:
         '''
         Sets new active options dict with options combined from all options
         dicts with priority according to self.priority.
@@ -212,7 +220,7 @@ class CombinedOptions(Options):
         self._convert()
 
 
-def validate_in(supported, msg=None):
+def validate_in(supported: Collection, msg: Optional[str] = None) -> Callable:
     '''
     Simple validator factory. Resulting function checks if option value
     is contained in supported collection.
@@ -227,7 +235,7 @@ def validate_in(supported, msg=None):
     DEFAULT_MSG = 'Unsupported option value {val}. Should be one '\
                   'of: {supported}'
 
-    def validate(val):
+    def validate(val: Any) -> None:
         if val not in supported:
             raise ValidationError(message.format(val=val, supported=', '.join(str(s) for s in supported)))
 
@@ -239,7 +247,10 @@ def validate_in(supported, msg=None):
     return validate
 
 
-def val_type(supported: list or type):
+NoneType = type(None)
+
+
+def val_type(supported: Union[List[Union[type, NoneType]], type]) -> Callable:
     '''
     Validator factory for validating param type.
 
@@ -248,7 +259,7 @@ def val_type(supported: list or type):
 
     MSG = 'Unsupported option value {val}. Must be of type {supported}'
 
-    def validate(val):
+    def validate(val: Any) -> None:
         for type_ in types:
             if type_ is None:
                 if val is None:
@@ -260,29 +271,29 @@ def val_type(supported: list or type):
         types = [None]
     elif isinstance(supported, type):
         types = [supported]
-    elif hasattr(supported, '__contains__'):
-        types = supported
+    elif isinstance(supported, Collection):
+        types = supported  # type: ignore
     else:
         raise ValueError('`supported` should be a type, None or a collection of types')
     return validate
 
 
-def validate_exists(val):
+def validate_exists(val: Union[str, Path]) -> None:
     '''Validator that checks if path specified in val exists'''
     MSG = 'Path {val} does not exist.'
     if val and not Path(val).exists():
         raise ValidationError(MSG.format(val=val))
 
 
-def path_convertor(option: str or PosixPath):
+def path_convertor(option: Union[str, Path]) -> Path:
     '''convert string to Path'''
-    if type(option) is str:
+    if isinstance(option, str):
         return Path(yaml.load(option, yaml.Loader))
-    else:
+    elif isinstance(option, Path):
         return option
 
 
-def yaml_to_dict_convertor(option: str or dict):
+def yaml_to_dict_convertor(option):
     '''
     DEPRECATED. Foliant does it automatically since 1.0.9
     convert yaml string or dict to dict
@@ -294,7 +305,7 @@ def yaml_to_dict_convertor(option: str or dict):
         return yaml.load(option, yaml.Loader)
 
 
-def boolean_convertor(option):
+def boolean_convertor(option: Any) -> bool:
     '''
     Convert option to bool if necessary.
 
@@ -320,13 +331,13 @@ def boolean_convertor(option):
         return bool(option)
 
 
-def rel_path_convertor(parent_path: str or PosixPath):
+def rel_path_convertor(parent_path: Union[str, Path]) -> Callable:
     '''
     Convertor factory which makes option path relative to parent_path supplied
     during the convertor initialization.
     '''
 
-    def _convertor(option):
+    def _convertor(option: Union[str, Path]) -> Any:
         if not option:
             return option
         else:
