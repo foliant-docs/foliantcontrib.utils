@@ -22,10 +22,10 @@ class Options:
 
     def __init__(self,
                  options: dict,
-                 defaults: dict = {},
-                 convertors: dict = {},
-                 validators: dict = {},
-                 required: list = []):
+                 defaults: dict = None,
+                 convertors: dict = None,
+                 validators: dict = None,
+                 required: list = None):
         '''
         options (dict)    — options dictionary,
         defaults (dict)   — dictionary with default values,
@@ -39,11 +39,11 @@ class Options:
         required (list)   - list of required params or list of tuples with
                             combinations of required params.
         '''
-        self.defaults = defaults
-        self._options = {**defaults, **options}
-        self._validators = validators
-        self._convertors = convertors
-        self._required = required
+        self.defaults = dict(defaults) if defaults else {}
+        self._options = {**self.defaults, **options}
+        self._validators = dict(validators) if validators else {}
+        self._convertors = dict(convertors) if convertors else {}
+        self._required = list(required) if required else []
         self.validate()
         self._convert()
 
@@ -120,6 +120,9 @@ class Options:
     def __iter__(self):
         return iter(self.options.keys())
 
+    def __bool__(self):
+        return bool(self.options)
+
     def get(self, key, default=None):
         return self.options.get(key, default)
 
@@ -145,10 +148,10 @@ class CombinedOptions(Options):
     def __init__(self,
                  options: dict or OrderedDict,
                  priority: str or list = None,
-                 defaults: dict = {},
-                 convertors: dict = {},
-                 validators: dict = {},
-                 required: list = []):
+                 defaults: dict = None,
+                 convertors: dict = None,
+                 validators: dict = None,
+                 required: list = None):
         '''
         :param options:  dictionary where key = priority,
                          value = option dictionary.
@@ -156,12 +159,16 @@ class CombinedOptions(Options):
 
         other parameters are same as in parent
         '''
-        self._options_dict = options
-        self._validators = validators
-        self._convertors = convertors
-        self._required = required
-        self.defaults = defaults
-        self.priority = priority
+        self.defaults = dict(defaults) if defaults else {}
+        self._options_dict = dict(options) if options else {}
+        self._validators = dict(validators) if validators else {}
+        self._convertors = dict(convertors) if convertors else {}
+        self._required = list(required) if required else []
+
+        if isinstance(priority, (list, tuple)):
+            self.priority = list(priority)
+        else:
+            self.priority = priority
 
     @property
     def priority(self):
@@ -222,7 +229,7 @@ def validate_in(supported, msg=None):
 
     def validate(val):
         if val not in supported:
-            raise ValidationError(message.format(val=val, supported=', '.join(supported)))
+            raise ValidationError(message.format(val=val, supported=', '.join(str(s) for s in supported)))
 
     if not hasattr(supported, '__contains__'):
         raise ValueError('`supported` should be a collection')
@@ -276,7 +283,10 @@ def path_convertor(option: str or PosixPath):
 
 
 def yaml_to_dict_convertor(option: str or dict):
-    '''convert yaml string or dict to dict'''
+    '''
+    DEPRECATED. Foliant does it automatically since 1.0.9
+    convert yaml string or dict to dict
+    '''
 
     if type(option) is dict:
         return option
@@ -286,10 +296,11 @@ def yaml_to_dict_convertor(option: str or dict):
 
 def boolean_convertor(option):
     '''
-    convert option to bool if necessary.
+    Convert option to bool if necessary.
 
     Accepts True\False, 'tRuE' \ 'falSE', 1\0, Y \ n, yes \ no
-    "other str" = True
+
+    Other types are validated as bool(object)
     '''
     str_dict = {
         '1': True,
@@ -303,10 +314,10 @@ def boolean_convertor(option):
     }
     if type(option) == bool:
         return option
-    elif type(option) == int:
-        return bool(int)
     elif type(option) == str:
         return str_dict.get(option.lower().strip(), True)
+    else:
+        return bool(option)
 
 
 def rel_path_convertor(parent_path: str or PosixPath):
