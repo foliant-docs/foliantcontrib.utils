@@ -1,8 +1,9 @@
-import unicodedata
 import re
+import unicodedata
 
 from hashlib import sha1
 from urllib.parse import quote
+from typing import Dict
 
 FALLBACK_BACKEND = 'pandoc'
 FLAT_BACKENDS = ['pandoc', 'slate', 'aglio', 'mdtopdf']
@@ -16,7 +17,7 @@ class IDGenerator:
     '''
 
     def __init__(self, backend: str):
-        self.registry = {}
+        self.registry: Dict[str, int] = {}
         self.backend = backend
 
     def generate(self, heading: str) -> str:
@@ -31,7 +32,7 @@ class IDGenerator:
         self.registry[id_] = self.registry.setdefault(id_, 0) + 1
         return make_unique(id_, self.registry[id_], self.backend)
 
-    def reset(self):
+    def reset(self) -> None:
         '''
         Reset all ID count to 0.
         '''
@@ -67,7 +68,7 @@ def to_id(input_: str, backend: str) -> str:
     return BACKEND_MAP[backend](input_)
 
 
-def make_unique(input_: str, occurrence: str, backend: str) -> str:
+def make_unique(input_: str, occurrence: int, backend: str) -> str:
     '''
     Make an id, converted from the title, unique according to backend rules.
     If backend not found, fallback backend is used.
@@ -142,7 +143,7 @@ def to_id_pandoc(input_: str) -> str:
 
 def to_id_mdtopdf(input_: str) -> str:
     def accept(char: str) -> bool:
-        return char in ALPHA or char.isalpha() or char.isdigit() or False
+        return char in ALPHA or char.isalpha() or char.isdigit()
     ALPHA = '_-'
     result = ''
     source = input_.lower().strip()
@@ -161,37 +162,37 @@ def to_id_mdtopdf(input_: str) -> str:
 
 
 def to_id_aglio(input_: str) -> str:
-    repl = {
-        '\'': '’',
+    repl_dict = {
+        "'": '’',
         '...': '…',
         '---': '—',
         '--': '–',
     }
     result = 'header-' + input_.lower().strip()
 
-    for source, repl in repl.items():
+    for source, repl in repl_dict.items():
         result = result.replace(source, repl)
     result = re.sub(r'[\s"/:<=>\\]', '-', result)
-    result = re.sub(r'-+', '-', result)
+    # result = re.sub(r'-+', '-', result)
     result = re.sub(r',+', ',', result)
     return result
 
 
 def to_id_confluence(input_: str) -> str:
-    repl = {
-        '\'': '’',
+    repl_dict = {
+        "'": '’',
         '...': '…',
         '---': '—',
         '--': '–',
     }
     result = re.sub(r'\s', '', input_)
 
-    for source, repl in repl.items():
+    for source, repl in repl_dict.items():
         result = result.replace(source, repl)
     return result
 
 
-def slugify(value, separator):
+def slugify(value: str, separator: str) -> str:
     """
     Slugify a string, to make it URL friendly.
 
@@ -200,9 +201,9 @@ def slugify(value, separator):
 
     Mkdocs uses it by default to generate heading IDs
     """
-    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = re.sub(r'[^\w\s-]', '', value.decode('ascii')).strip().lower()
-    return re.sub(r'[%s\s]+' % separator, separator, value)
+    normalized = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    shaved = re.sub(r'[^\w\s-]', '', normalized.decode('ascii')).strip().lower()
+    return re.sub(r'[%s\s]+' % separator, separator, shaved)
 
 
 RE_TAGS = re.compile(r'</?[^>]*>', re.UNICODE)
@@ -213,7 +214,10 @@ RE_INVALID_SLUG_CHAR = re.compile(r'[^\w\- ]', re.UNICODE)
 RE_SEP = re.compile(r' ', re.UNICODE)
 
 
-def uslugify(text, sep, cased=NO_CASED, percent_encode=False):
+def uslugify(text: str,
+             sep:str,
+             cased: int = NO_CASED,
+             percent_encode: bool = False):
     """
     Unicode slugify (`utf-8`).
 
@@ -270,7 +274,7 @@ def parameterize_slate(string_to_clean: str, sep: str = '-') -> str:
 
 def to_id_slate(input_: str) -> str:
     # removing tags
-    source = re.sub(r'<[\w_:]*>', '', input_)
+    source = re.sub(r'<[/\w_:=" ]*>', '', input_)
     source = parameterize_slate(source)
     return source if source else sha1(input_.encode('utf-8')).hexdigest()[:10]
 
