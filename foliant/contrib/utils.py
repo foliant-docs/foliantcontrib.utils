@@ -1,11 +1,12 @@
-from pathlib import PosixPath
+from pathlib import Path
+from typing import Union
 
 
 def prepend_file(
-    filepath: str or PosixPath,
+    filepath: Union[str, Path],
     content: str,
-    before_yfm=False,
-    before_heading=True
+    before_yfm: bool = False,
+    before_heading: bool = True
 ):
     '''
     Insert `content` at the beginning of the file `filepath`.
@@ -13,7 +14,7 @@ def prepend_file(
     :param filepath: path to file which needs to be prepended.
     :param content: content to be inserted.
     :before_yfm: if file starts with YAML Front Matter, insert content before it
-    :before_yfm: if file starts with a heading, insert content before it
+    :before_heading: if file starts with a heading, insert content before it
     '''
     with open(filepath, encoding='utf8') as f:
         source = f.read()
@@ -23,11 +24,13 @@ def prepend_file(
     if not before_yfm and source.startswith('---\n'):
         yfm_end = source.find('\n---\n', 1)
         start = yfm_end + len('\n---\n') if yfm_end != -1 else 0
+        # add line break for not to break the heading
+        content = '\n' + content
     if not before_heading and source.startswith('#'):
         start = source.find('\n', 1) + 1
         if start == 0:
             start = len(source)
-        # add a line break just in case for not to break thea heading
+        # add line break for not to break the heading
         content = '\n' + content
 
     processed_content = source[:start] + content + source[start:]
