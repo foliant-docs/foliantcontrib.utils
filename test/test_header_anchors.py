@@ -1,6 +1,4 @@
-from pathlib import Path
 from unittest import TestCase
-from unittest.mock import Mock
 
 from foliant.contrib.header_anchors import make_unique_confluence
 from foliant.contrib.header_anchors import make_unique_mkdocs
@@ -61,7 +59,7 @@ class TestMdToPdf(TestCase):
         self.assertEqual(to_id_mdtopdf('qwe       rty'), 'qwe-------rty')
 
 
-class TestMdToPdf(TestCase):
+class TestAglio(TestCase):
     def test_lower(self):
         self.assertEqual(to_id_aglio('QwErTy'), 'header-qwerty')
         self.assertEqual(to_id_aglio('QWERTY'), 'header-qwerty')

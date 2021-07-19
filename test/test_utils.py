@@ -9,7 +9,9 @@ from foliant.contrib.utils import prepend_file
 def rel_name(path: str):
     return os.path.join(os.path.dirname(__file__), path)
 
+
 TEST_DATA_PATH = Path(os.path.dirname(__file__)) / 'test_data' / 'utils'
+
 
 class TestPrependFile(TestCase):
     def setUp(self):
@@ -62,7 +64,6 @@ Second prepended paragraph\n\n'''
             result = f.read()
 
         self.assertEqual(result, expected)
-
 
     def test_yfm_before(self):
         filepath = TEST_DATA_PATH / 'cp_yfm.md'
