@@ -8,6 +8,7 @@ from foliant.contrib.chapters import flatten_seq
 
 from .utils import chcwd
 
+
 class TestFlattenSeq(TestCase):
     def test_plain_list(self):
         seq = ['ch1.md', 'ch2.md', 'ch3.md', 'ch4.md']

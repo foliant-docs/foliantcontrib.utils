@@ -1,30 +1,29 @@
-import traceback
 import re
+import traceback
 
-from pathlib import Path, PosixPath
-
-# from yaml import add_constructor
+from pathlib import Path
+from typing import Callable
+from typing import Optional
+from typing import Union
 
 from foliant.preprocessors.base import BasePreprocessor
 from foliant.utils import output
-# from foliant.meta.generate import load_meta, get_meta_for_chapter
-
-OptionValue = int or float or bool or str
 
 
-def allow_fail(msg='Failed to process tag. Skipping.'):
+def allow_fail(msg: str = 'Failed to process tag. Skipping.') -> Callable:
     """
     If function func fails for some reason, warning is issued but preprocessor
     doesn't terminate. In this case the tag remains unchanged.
     Decorator issues a warning to user with BasePreprocessorExt _warning method.
     If first positional argument is a match object, it is passed as context.
     """
+
     def decorator(func):
-        def wrapper(self, *args, **kwargs):
+        def wrapper(self, *args, **kwargs) -> Optional[str]:
             try:
                 return func(self, *args, **kwargs)
             except Exception as e:
-                if isinstance(args[0], re.Match):
+                if args and isinstance(args[0], re.Match):
                     self._warning(f'{msg} {e}',
                                   context=self.get_tag_context(args[0]),
                                   error=e)
@@ -46,11 +45,11 @@ class BasePreprocessorExt(BasePreprocessor):
         self.current_pos = 0
         self.current_func = None
         self.buffer = {}
-        # self.meta = load_meta(self.config['chapters'], self.working_dir)
-        # add_constructor('!meta', self._resolve_meta_tag)
 
     @staticmethod
-    def get_tag_context(match, limit=100, full_tag=False):
+    def get_tag_context(match: re.Match,
+                        limit: int = 100,
+                        full_tag: bool = False) -> str:
         '''
         Get context of the tag match object.
 
@@ -76,26 +75,23 @@ class BasePreprocessorExt(BasePreprocessor):
             result += '...'
         return result
 
-    # def _resolve_meta_tag(self, _, node) -> str:
-
-    #     chapter = get_meta_for_chapter(self.current_filepath)
-    #     section = chapter.get_section_by_offset(self.current_pos)
-    #     return section.data.get(node.value, '')
-
     def _warning(self,
                  msg: str,
-                 context='',
-                 error: Exception = None):
+                 context: str = '',
+                 error: Exception = None) -> None:
         '''
         Log warning and print to user.
 
         If debug mode — print also context (if sepcified) and error (if specified).
 
-        msg — message which should be logged;
-        context (optional) — tag context got with get_tag_context function. If
-                             specified — will be logged. If debug = True it
-                             will also go to STDOUT.
+        :param msg: — message which should be logged;
+        :param context: — tag context got with get_tag_context function. If
+                          specified — will be logged. If debug = True it
+                          will also go to STDOUT.
+        :param error: - exception which was caught before warning. If specified —
+                        error traceback whill be added to log (and debug output) message.
         '''
+
         output_message = ''
         if self.current_filename:
             output_message += f'[{self.current_filename}] '
@@ -113,18 +109,23 @@ class BasePreprocessorExt(BasePreprocessor):
         output(f'WARNING: {output_message}', self.quiet)
         self.logger.warning(log_message)
 
-    def pos_injector(self, block):
+    def pos_injector(self, block: re.Match) -> str:
+        """
+        Save offset of match object to self.current_pos and run
+        self.current_func with this match object.
+        """
+
         self.current_pos = block.start()
         return self.current_func(block)
 
-    def save_file(self, path, content):
+    def save_file(self, path: Union[str, Path], content: str) -> None:
         with open(path, 'w', encoding='utf8') as f:
             f.write(content)
 
     def _process_tags_for_all_files(self,
-                                    func,
+                                    func: Callable,
                                     log_msg: str = 'Applying preprocessor',
-                                    buffer: bool = False):
+                                    buffer: bool = False) -> None:
         '''
         Apply function func to all Markdown-files in the working dir
 
@@ -160,9 +161,9 @@ class BasePreprocessorExt(BasePreprocessor):
         self.buffer = {}
 
     def _process_all_files(self,
-                           func,
+                           func: Callable,
                            log_msg: str = 'Applying preprocessor',
-                           buffer: bool = False):
+                           buffer: bool = False) -> None:
         '''Apply function func to all Markdown-files in the working dir'''
         self.logger.info(log_msg)
         for markdown_file_path in self.working_dir.rglob('*.md'):

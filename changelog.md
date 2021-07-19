@@ -4,6 +4,7 @@
 -    Combined options classes now clone input dicts and lists.
 -    Combined options: fix validate_in.
 -    Header Anchors: fix slate id generator.
+-    PreprocessorExt: allow_fail now supports methods without args.
 
 # 1.0.1
 
