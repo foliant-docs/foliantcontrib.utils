@@ -1,3 +1,7 @@
+# 1.0.3
+
+-    PreprocessorExt: add `debug_msg` param to `_warning` method.
+
 # 1.0.2
 
 -    Fix error in initial values for combined options classes.

@@ -78,18 +78,20 @@ class BasePreprocessorExt(BasePreprocessor):
     def _warning(self,
                  msg: str,
                  context: str = '',
-                 error: Exception = None) -> None:
+                 error: Exception = None,
+                 debug_msg: str = '') -> None:
         '''
         Log warning and print to user.
 
         If debug mode — print also context (if sepcified) and error (if specified).
 
-        :param msg: — message which should be logged;
-        :param context: — tag context got with get_tag_context function. If
-                          specified — will be logged. If debug = True it
-                          will also go to STDOUT.
-        :param error: - exception which was caught before warning. If specified —
-                        error traceback whill be added to log (and debug output) message.
+        :param msg:       — message which should be logged;
+        :param context:   — tag context got with get_tag_context function. If
+                            specified — will be logged. If debug = True it
+                            will also go to STDOUT.
+        :param error:     — exception which was caught before warning. If specified —
+                            error traceback whill be added to log (and debug output) message.
+        :param debug_msg: — message to additionally print to stdout in debug mode.
         '''
 
         output_message = ''
@@ -97,6 +99,8 @@ class BasePreprocessorExt(BasePreprocessor):
             output_message += f'[{self.current_filename}] '
         output_message += msg + '\n'
         log_message = output_message
+        if debug_msg:
+            log_message += f'{debug_msg}\n'
         if context:
             log_message += f'Context:\n---\n{context}\n---\n'
         if error:
