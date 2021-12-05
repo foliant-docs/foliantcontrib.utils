@@ -252,14 +252,14 @@ So now instead of all that code we will write:
 
 ```python
 class Preprocessor(BasePreprocessorExt):
-  ...
-  def _process_file(match):
-    processed = content
-    # do something with the content
-    return processed
+    ...
+    def _process_file(self, content):
+        processed = content
+        # do something with the content
+        return processed
 
-  def apply(self):
-    self._process_all_files(func=self._process_file, buffer=False)
+    def apply(self):
+        self._process_all_files(func=self._process_file, buffer=False)
         self.logger.info('Preprocessor applied')
 ```
 
