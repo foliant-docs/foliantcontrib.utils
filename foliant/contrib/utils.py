@@ -1,4 +1,8 @@
+from concurrent.futures import ThreadPoolExecutor
+from os import makedirs, listdir
+from os.path import join
 from pathlib import Path
+from shutil import move
 from typing import Union
 
 
@@ -37,3 +41,24 @@ def prepend_file(
 
     with open(filepath, 'w', encoding='utf8') as f:
         f.write(processed_content)
+
+
+def move_files_threadpool(src: Path, dest: Path, n_workers: int = 64):
+    """Move files from one directory to another with ThreadPoolExecutor
+
+    :param src: path to source directory
+    :param dest: path to the destination directory
+    :param n_workers: number of workers in ThreadPool
+    """
+    def move_files(src_paths, dest_dir):
+        for src_path in src_paths:
+            move(src_path, dest_dir)
+
+    makedirs(dest, exist_ok=True)
+    files = [join(src, name) for name in listdir(src)]
+    chunksize = round(len(files) / n_workers)
+    chunksize = 1 if chunksize == 0 else chunksize
+    with ThreadPoolExecutor(n_workers) as exe:
+        for i in range(0, len(files), chunksize):
+            filenames = files[i:(i + chunksize)]
+            _ = exe.submit(move_files, filenames, dest)
