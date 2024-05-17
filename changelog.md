@@ -1,3 +1,8 @@
+# 1.0.4
+
+-    utils: add `move_files_threadpool` function
+
+
 # 1.0.3
 
 -    PreprocessorExt: add `debug_msg` param to `_warning` method.
