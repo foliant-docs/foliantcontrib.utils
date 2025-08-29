@@ -1,5 +1,6 @@
 import re
 import traceback
+import threading
 
 from pathlib import Path
 from typing import Callable
@@ -8,6 +9,14 @@ from typing import Union
 
 from foliant.preprocessors.base import BasePreprocessor
 from foliant.utils import output
+
+
+def run_in_thread(fn):
+    def run(*k, **kw):
+        t = threading.Thread(target=fn, args=k, kwargs=kw)
+        t.start()
+        return t
+    return run
 
 
 def allow_fail(msg: str = 'Failed to process tag. Skipping.') -> Callable:
@@ -140,7 +149,9 @@ class BasePreprocessorExt(BasePreprocessor):
                        at the end all files will be saved at once.
         '''
         self.logger.info(log_msg)
-        for markdown_file_path in self.working_dir.rglob('*.md'):
+
+        @run_in_thread
+        def process(self, markdown_file_path):
             self.current_filepath = Path(markdown_file_path)
             self.current_filename = str(self.current_filepath.
                                         relative_to(self.working_dir))
@@ -158,6 +169,8 @@ class BasePreprocessorExt(BasePreprocessor):
                     self.buffer[markdown_file_path] = processed_content
                 else:
                     self.save_file(markdown_file_path, processed_content)
+        for markdown_file_path in self.working_dir.rglob('*.md'):
+            process(self, markdown_file_path)
         self.current_filename = ''
 
         for path, content in self.buffer.items():
@@ -170,7 +183,9 @@ class BasePreprocessorExt(BasePreprocessor):
                            buffer: bool = False) -> None:
         '''Apply function func to all Markdown-files in the working dir'''
         self.logger.info(log_msg)
-        for markdown_file_path in self.working_dir.rglob('*.md'):
+
+        @run_in_thread
+        def process(markdown_file_path):
             self.current_filepath = Path(markdown_file_path)
             self.current_filename = str(self.current_filepath.
                                         relative_to(self.working_dir))
@@ -185,6 +200,8 @@ class BasePreprocessorExt(BasePreprocessor):
                     self.buffer[markdown_file_path] = processed_content
                 else:
                     self.save_file(markdown_file_path, processed_content)
+        for markdown_file_path in self.working_dir.rglob('*.md'):
+            process(markdown_file_path)
         self.current_filename = ''
 
         for path, content in self.buffer.items():
