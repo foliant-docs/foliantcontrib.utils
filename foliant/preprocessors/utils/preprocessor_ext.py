@@ -159,7 +159,6 @@ class BasePreprocessorExt(BasePreprocessor):
         '''
         self.logger.info(log_msg)
 
-        @run_in_thread
         def process(self, markdown_file_path):
             self.current_filepath = Path(markdown_file_path)
             self.current_filename = str(self.current_filepath.
