@@ -14,19 +14,29 @@ from foliant.utils import output
 MAX_THREADS = max(1, os.cpu_count() - 2)
 thread_semaphore = threading.Semaphore(MAX_THREADS)
 
-def run_in_thread(fn):
-    @wraps(fn)
-    def run(*args, **kwargs):
-        def wrapper():
-            try:
-                fn(*args, **kwargs)
-            finally:
-                thread_semaphore.release()
-        
-        thread_semaphore.acquire()
-        threading.Thread(target=wrapper, daemon=True).start()
+def run_in_thread(enabled=True):
+    """
+    If enabled=False, the function runs normally, without threads.
+    """
+    def actual_decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            if not enabled:
+                return fn(*args, **kwargs)
 
-    return run
+            def thread_task():
+                try:
+                    fn(*args, **kwargs)
+                finally:
+                    thread_semaphore.release()
+
+            thread_semaphore.acquire()
+            thread = threading.Thread(target=thread_task, daemon=True)
+            thread.start()
+            return thread
+
+        return wrapper
+    return actual_decorator
 
 def allow_fail(msg: str = 'Failed to process tag. Skipping.') -> Callable:
     """
@@ -159,6 +169,8 @@ class BasePreprocessorExt(BasePreprocessor):
         '''
         self.logger.info(log_msg)
 
+        multithread = self.context['config'].get('multithread', False)
+        @run_in_thread(enabled=multithread)
         def process(self, markdown_file_path):
             self.current_filepath = Path(markdown_file_path)
             self.current_filename = str(self.current_filepath.
@@ -192,7 +204,8 @@ class BasePreprocessorExt(BasePreprocessor):
         '''Apply function func to all Markdown-files in the working dir'''
         self.logger.info(log_msg)
 
-        @run_in_thread
+        multithread = self.context['config'].get('multithread', False)
+        @run_in_thread(enabled=multithread)
         def process(markdown_file_path):
             self.current_filepath = Path(markdown_file_path)
             self.current_filename = str(self.current_filepath.
