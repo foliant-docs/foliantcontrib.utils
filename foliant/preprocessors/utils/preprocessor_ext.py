@@ -1,23 +1,32 @@
+import os
 import re
 import traceback
 import threading
 
 from pathlib import Path
-from typing import Callable
-from typing import Optional
-from typing import Union
+from typing import Callable, Optional, Union
+from functools import wraps
 
 from foliant.preprocessors.base import BasePreprocessor
 from foliant.utils import output
 
 
-def run_in_thread(fn):
-    def run(*k, **kw):
-        t = threading.Thread(target=fn, args=k, kwargs=kw)
-        t.start()
-        return t
-    return run
+MAX_THREADS = max(1, os.cpu_count() - 2)
+thread_semaphore = threading.Semaphore(MAX_THREADS)
 
+def run_in_thread(fn):
+    @wraps(fn)
+    def run(*args, **kwargs):
+        def wrapper():
+            try:
+                fn(*args, **kwargs)
+            finally:
+                thread_semaphore.release()
+        
+        thread_semaphore.acquire()
+        threading.Thread(target=wrapper, daemon=True).start()
+
+    return run
 
 def allow_fail(msg: str = 'Failed to process tag. Skipping.') -> Callable:
     """

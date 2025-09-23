@@ -1,3 +1,7 @@
+# 1.0.5
+
+-    PreprocessorExt: fixed the definition of `run_in_thread`, which is a decorator for the file processing function.
+
 # 1.0.4
 
 -    utils: add `move_files_threadpool` function
