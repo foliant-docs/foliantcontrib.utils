@@ -1,3 +1,7 @@
+# 1.0.5
+
+-    PreprocessorExt: fix decorator `run_in_thread`
+
 # 1.0.4
 
 -    utils: add `move_files_threadpool` function
