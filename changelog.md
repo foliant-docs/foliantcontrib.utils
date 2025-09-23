@@ -1,6 +1,6 @@
 # 1.0.6
 
--    PreprocessorExt: multithreaded tag processing is disabled.
+-    PreprocessorExt: add option `multithread`
  
 # 1.0.5
 
