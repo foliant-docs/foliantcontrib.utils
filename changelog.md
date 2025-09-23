@@ -1,6 +1,6 @@
 # 1.0.5
 
--    PreprocessorExt: fix decorator `run_in_thread`
+-    PreprocessorExt: fixed the definition of `run_in_thread`, which is a decorator for the file processing function.
 
 # 1.0.4
 
