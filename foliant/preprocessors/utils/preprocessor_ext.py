@@ -16,14 +16,14 @@ thread_semaphore = threading.Semaphore(MAX_THREADS)
 
 def run_in_thread(enabled=True):
     """
-    If enabled=False, the function runs normally, without threads.
+    If enabled=False, returns the original function immediately without wrapping.
     """
     def actual_decorator(fn):
+        if not enabled:
+            return fn
+
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            if not enabled:
-                return fn(*args, **kwargs)
-
             def thread_task():
                 try:
                     fn(*args, **kwargs)
@@ -36,6 +36,7 @@ def run_in_thread(enabled=True):
             return thread
 
         return wrapper
+    
     return actual_decorator
 
 def allow_fail(msg: str = 'Failed to process tag. Skipping.') -> Callable:
