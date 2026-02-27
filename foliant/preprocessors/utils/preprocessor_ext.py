@@ -36,7 +36,7 @@ def run_in_thread(enabled=True):
             return thread
 
         return wrapper
-    
+
     return actual_decorator
 
 def allow_fail(msg: str = 'Failed to process tag. Skipping.') -> Callable:
@@ -74,6 +74,7 @@ class BasePreprocessorExt(BasePreprocessor):
         self.current_pos = 0
         self.current_func = None
         self.buffer = {}
+        self._first_warning = True
 
     @staticmethod
     def get_tag_context(match: re.Match,
@@ -126,20 +127,33 @@ class BasePreprocessorExt(BasePreprocessor):
         output_message = ''
         if self.current_filename:
             output_message += f'[{self.current_filename}] '
-        output_message += msg + '\n'
+        output_message += msg
         log_message = output_message
+
+        parts = []
         if debug_msg:
-            log_message += f'{debug_msg}\n'
+            parts.append(debug_msg)
         if context:
-            log_message += f'Context:\n---\n{context}\n---\n'
+            context_clean = context.strip('\n')
+            parts.append(f'Context:\n---\n{context_clean}\n---')
         if error:
             tb_str = traceback.format_exception(etype=type(error),
                                                 value=error,
                                                 tb=error.__traceback__)
-            log_message += '\n'.join(tb_str)
+            parts.append('\n'.join(tb_str).rstrip('\n'))
+
+        if parts:
+            log_message += '\n' + '\n'.join(parts)
+
         if self.debug:
             output_message = log_message
-        output(f'WARNING: {output_message}', self.quiet)
+
+        if self._first_warning:
+            output(f'\nWARNING: {output_message}', self.quiet)
+            self._first_warning = False
+        else:
+            output(f'WARNING: {output_message}', self.quiet)
+
         self.logger.warning(log_message)
 
     def pos_injector(self, block: re.Match) -> str:
