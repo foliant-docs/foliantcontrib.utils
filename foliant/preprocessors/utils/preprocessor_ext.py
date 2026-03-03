@@ -75,8 +75,7 @@ class BasePreprocessorExt(BasePreprocessor):
         self.current_func = None
         self.buffer = {}
         self._first_warning = True
-        self._last_warning_key = None
-        self._last_warning_count = 0
+        self._warnings = {}
 
     @staticmethod
     def get_tag_context(match: re.Match,
@@ -126,44 +125,10 @@ class BasePreprocessorExt(BasePreprocessor):
         :param debug_msg: — message to additionally print to stdout in debug mode.
         """
 
-        # The key is to compare with the previous warning
-        current_key = (msg, context, debug_msg, error)
-
-        # If this is the first warning
-        if self._last_warning_key is None:
-            self._last_warning_key = current_key
-            self._last_warning_count = 1
-            self._print_warning(current_key, 1)
-            return
-
-        # If this is the first warning
-        if self._last_warning_key == current_key:
-            self._last_warning_count += 1
-            self._print_warning(current_key, self._last_warning_count, update=True)
-        else:
-            self._last_warning_key = current_key
-            self._last_warning_count = 1
-            self._print_warning(current_key, 1)
-
-    def _print_warning(self, warning_key, count, update=False):
-        """Method for warning output"""
-        msg, context, debug_msg, error = warning_key
-
-        # If we update a line, we erase the previous one.
-        if update and not self.quiet:
-            print('\033[F', end='', flush=True)
-            print('\033[K', end='', flush=True)
-            print('\r' + ' ' * 80 + '\r', end='', flush=True)
-
         output_message = ''
         if self.current_filename:
             output_message += f'[{self.current_filename}] '
         output_message += msg
-
-        # Adding a counter if it is more than 1
-        if count > 1:
-            output_message += f' ({count})'
-
         log_message = output_message
 
         parts = []
@@ -184,14 +149,24 @@ class BasePreprocessorExt(BasePreprocessor):
         if self.debug:
             output_message = log_message
 
-        if not self.quiet:
-            if self._first_warning:
-                output(f'\nWARNING: {output_message}')
-                self._first_warning = False
-            else:
-                output(f'WARNING: {output_message}')
+        warning_key = f'WARNING: {output_message}'
+        self._warnings[warning_key] = self._warnings.get(warning_key, 0) + 1
 
         self.logger.warning(log_message)
+
+    def _finalize_warnings(self):
+        """Displays all warnings, taking into account repetitions"""
+        if not self._warnings:
+            return
+
+        for i, (warning, count) in enumerate(self._warnings.items()):
+            if count > 1:
+                warning = f'{warning} ({count})'
+            if i == 0:
+                output(f"\n{warning}", self.quiet)
+            else:
+                output(warning, self.quiet)
+        self._warnings.clear()
 
     def pos_injector(self, block: re.Match) -> str:
         """
@@ -273,9 +248,12 @@ class BasePreprocessorExt(BasePreprocessor):
                     self.buffer[markdown_file_path] = processed_content
                 else:
                     self.save_file(markdown_file_path, processed_content)
-        for markdown_file_path in self.working_dir.rglob('*.md'):
-            process(markdown_file_path)
-        self.current_filename = ''
+        try:
+            for markdown_file_path in self.working_dir.rglob('*.md'):
+                process(markdown_file_path)
+            self.current_filename = ''
+        finally:
+            self._finalize_warnings()
 
         for path, content in self.buffer.items():
             self.save_file(path, content)
