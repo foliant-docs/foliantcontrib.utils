@@ -75,12 +75,14 @@ class BasePreprocessorExt(BasePreprocessor):
         self.current_func = None
         self.buffer = {}
         self._first_warning = True
+        self._last_warning_key = None
+        self._last_warning_count = 0
 
     @staticmethod
     def get_tag_context(match: re.Match,
                         limit: int = 100,
                         full_tag: bool = False) -> str:
-        '''
+        """
         Get context of the tag match object.
 
         Returns a string with <limit> symbols before match, the match string and
@@ -88,7 +90,7 @@ class BasePreprocessorExt(BasePreprocessor):
 
         If full_tag == False, matched string is limited too: first <limit>/2
         symbols of match and last <limit>/2 symbols of match.
-        '''
+        """
 
         source = match.string
         start = max(0, match.start() - limit)  # index of context start
@@ -110,7 +112,7 @@ class BasePreprocessorExt(BasePreprocessor):
                  context: str = '',
                  error: Exception = None,
                  debug_msg: str = '') -> None:
-        '''
+        """
         Log warning and print to user.
 
         If debug mode — print also context (if sepcified) and error (if specified).
@@ -122,12 +124,44 @@ class BasePreprocessorExt(BasePreprocessor):
         :param error:     — exception which was caught before warning. If specified —
                             error traceback whill be added to log (and debug output) message.
         :param debug_msg: — message to additionally print to stdout in debug mode.
-        '''
+        """
+
+        # The key is to compare with the previous warning
+        current_key = (msg, context, debug_msg, error)
+
+        # If this is the first warning
+        if self._last_warning_key is None:
+            self._last_warning_key = current_key
+            self._last_warning_count = 1
+            self._print_warning(current_key, 1)
+            return
+
+        # If this is the first warning
+        if self._last_warning_key == current_key:
+            self._last_warning_count += 1
+            self._print_warning(current_key, self._last_warning_count, update=True)
+        else:
+            self._last_warning_key = current_key
+            self._last_warning_count = 1
+            self._print_warning(current_key, 1)
+
+    def _print_warning(self, warning_key, count, update=False):
+        """Method for warning output"""
+        msg, context, debug_msg, error = warning_key
+
+        # If we update a line, we erase the previous one.
+        if update and not self.quiet:
+            print('\r' + ' ' * 80 + '\r', end='', flush=True)
 
         output_message = ''
         if self.current_filename:
             output_message += f'[{self.current_filename}] '
         output_message += msg
+
+        # Adding a counter if it is more than 1
+        if count > 1:
+            output_message += f' [{count}]'
+
         log_message = output_message
 
         parts = []
@@ -148,11 +182,12 @@ class BasePreprocessorExt(BasePreprocessor):
         if self.debug:
             output_message = log_message
 
-        if self._first_warning:
-            output(f'\nWARNING: {output_message}', self.quiet)
-            self._first_warning = False
-        else:
-            output(f'WARNING: {output_message}', self.quiet)
+        if not self.quiet:
+            if self._first_warning:
+                output(f'\nWARNING: {output_message}')
+                self._first_warning = False
+            else:
+                output(f'WARNING: {output_message}')
 
         self.logger.warning(log_message)
 
