@@ -151,6 +151,8 @@ class BasePreprocessorExt(BasePreprocessor):
 
         # If we update a line, we erase the previous one.
         if update and not self.quiet:
+            print('\033[F', end='', flush=True)
+            print('\033[K', end='', flush=True)
             print('\r' + ' ' * 80 + '\r', end='', flush=True)
 
         output_message = ''
@@ -160,7 +162,7 @@ class BasePreprocessorExt(BasePreprocessor):
 
         # Adding a counter if it is more than 1
         if count > 1:
-            output_message += f' [{count}]'
+            output_message += f' ({count})'
 
         log_message = output_message
 
