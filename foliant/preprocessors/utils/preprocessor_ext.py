@@ -36,7 +36,7 @@ def run_in_thread(enabled=True):
             return thread
 
         return wrapper
-    
+
     return actual_decorator
 
 def allow_fail(msg: str = 'Failed to process tag. Skipping.') -> Callable:
@@ -74,12 +74,13 @@ class BasePreprocessorExt(BasePreprocessor):
         self.current_pos = 0
         self.current_func = None
         self.buffer = {}
+        self._warnings = {}
 
     @staticmethod
     def get_tag_context(match: re.Match,
                         limit: int = 100,
                         full_tag: bool = False) -> str:
-        '''
+        """
         Get context of the tag match object.
 
         Returns a string with <limit> symbols before match, the match string and
@@ -87,7 +88,7 @@ class BasePreprocessorExt(BasePreprocessor):
 
         If full_tag == False, matched string is limited too: first <limit>/2
         symbols of match and last <limit>/2 symbols of match.
-        '''
+        """
 
         source = match.string
         start = max(0, match.start() - limit)  # index of context start
@@ -109,7 +110,7 @@ class BasePreprocessorExt(BasePreprocessor):
                  context: str = '',
                  error: Exception = None,
                  debug_msg: str = '') -> None:
-        '''
+        """
         Log warning and print to user.
 
         If debug mode — print also context (if sepcified) and error (if specified).
@@ -121,26 +122,50 @@ class BasePreprocessorExt(BasePreprocessor):
         :param error:     — exception which was caught before warning. If specified —
                             error traceback whill be added to log (and debug output) message.
         :param debug_msg: — message to additionally print to stdout in debug mode.
-        '''
+        """
 
         output_message = ''
         if self.current_filename:
             output_message += f'[{self.current_filename}] '
-        output_message += msg + '\n'
+        output_message += msg
         log_message = output_message
+
+        parts = []
         if debug_msg:
-            log_message += f'{debug_msg}\n'
+            parts.append(debug_msg)
         if context:
-            log_message += f'Context:\n---\n{context}\n---\n'
+            context_clean = context.strip('\n')
+            parts.append(f'Context:\n---\n{context_clean}\n---')
         if error:
             tb_str = traceback.format_exception(etype=type(error),
                                                 value=error,
                                                 tb=error.__traceback__)
-            log_message += '\n'.join(tb_str)
+            parts.append('\n'.join(tb_str).rstrip('\n'))
+
+        if parts:
+            log_message += '\n' + '\n'.join(parts)
+
         if self.debug:
             output_message = log_message
-        output(f'WARNING: {output_message}', self.quiet)
+
+        warning_key = f'WARNING: {output_message}'
+        self._warnings[warning_key] = self._warnings.get(warning_key, 0) + 1
+
         self.logger.warning(log_message)
+
+    def _finalize_warnings(self):
+        """Displays all warnings, taking into account repetitions"""
+        if not self._warnings:
+            return
+
+        for i, (warning, count) in enumerate(self._warnings.items()):
+            if count > 1:
+                warning = f'{warning} ({count})'
+            if i == 0:
+                output(f"\n{warning}", self.quiet)
+            else:
+                output(warning, self.quiet)
+        self._warnings.clear()
 
     def pos_injector(self, block: re.Match) -> str:
         """
@@ -222,9 +247,12 @@ class BasePreprocessorExt(BasePreprocessor):
                     self.buffer[markdown_file_path] = processed_content
                 else:
                     self.save_file(markdown_file_path, processed_content)
-        for markdown_file_path in self.working_dir.rglob('*.md'):
-            process(markdown_file_path)
-        self.current_filename = ''
+        try:
+            for markdown_file_path in self.working_dir.rglob('*.md'):
+                process(markdown_file_path)
+            self.current_filename = ''
+        finally:
+            self._finalize_warnings()
 
         for path, content in self.buffer.items():
             self.save_file(path, content)

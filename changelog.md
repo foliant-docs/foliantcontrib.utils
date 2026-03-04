@@ -1,7 +1,11 @@
+# 1.0.7
+
+-    PreprocessorExt: added a merge of identical warnings and refactoring the warning messages formatting.
+
 # 1.0.6
 
 -    PreprocessorExt: add option `multithread`
- 
+
 # 1.0.5
 
 -    PreprocessorExt: fixed the definition of `run_in_thread`, which is a decorator for the file processing function.
