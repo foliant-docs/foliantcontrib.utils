@@ -74,7 +74,6 @@ class BasePreprocessorExt(BasePreprocessor):
         self.current_pos = 0
         self.current_func = None
         self.buffer = {}
-        self._first_warning = True
         self._warnings = {}
 
     @staticmethod
