@@ -1,3 +1,7 @@
+# 1.0.8
+
+-    fix: cyclic dependence is removed
+
 # 1.0.7
 
 -    PreprocessorExt: added a merge of identical warnings and refactoring the warning messages formatting.
