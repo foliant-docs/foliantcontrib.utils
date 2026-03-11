@@ -16,7 +16,7 @@ setup(
     description=SHORT_DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
-    version='1.0.7',
+    version='1.0.8',
     author='Daniil Minukhin',
     author_email='ddddsa@gmail.com',
     url='https://github.com/foliant-docs/foliantcontrib.utils',
@@ -25,8 +25,7 @@ setup(
     platforms='any',
     install_requires=[
         'foliant>=1.0.8',
-        'PyYAML',
-        'foliantcontrib.meta>=1.2.3',
+        'PyYAML>=3.12',
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
